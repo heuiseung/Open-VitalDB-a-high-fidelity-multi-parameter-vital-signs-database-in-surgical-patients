@@ -76,7 +76,11 @@ def main() -> None:
             path = VITAL_DIR / f"{caseid:04d}.vital"
             if not path.exists():
                 continue
-            df = load_vital_case(caseid)
+            try:
+                df = load_vital_case(caseid)
+            except Exception as e:
+                print(f"⚠️ 케이스 {caseid:04d} 로드 실패: {e}")
+                continue
             if df is None or df.empty:
                 continue
             labels = build_labels_for_case(df)
