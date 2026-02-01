@@ -38,8 +38,8 @@ TEST_SIZE = 0.2
 RANDOM_STATE = 42
 DEVICE = "cuda"
 
-MAX_RUNTIME_MINUTES = 30
-MAX_TRAIN_STEPS = 500
+MAX_RUNTIME_MINUTES = None  # 시간 제한 없음
+MAX_TRAIN_STEPS = None      # 스텝 제한 없음
 
 DATASET_PATH = BASE_DIR / "hypotension_dataset.csv"
 CHECKPOINT_DIR = BASE_DIR / "checkpoints"
