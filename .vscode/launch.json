@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "전체 파이프라인 (run_all)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_all.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "데이터셋 구축만 (build_dataset)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/build_dataset.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "학습만 (train_model)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/train_model.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

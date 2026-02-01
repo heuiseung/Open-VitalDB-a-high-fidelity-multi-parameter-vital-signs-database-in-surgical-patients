@@ -1,0 +1,3 @@
+#!/bin/sh
+# 커밋 후 자동으로 GitHub에 푸시
+git push
