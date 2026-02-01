@@ -20,17 +20,22 @@ from config import (
 )
 
 
-def load_vital_case(caseid: int) -> pd.DataFrame | None:
+def load_vital_case(caseid: int, max_retries: int = 3) -> pd.DataFrame | None:
+    """VitalDB 케이스 로드 (재시도 최대 3회)"""
     if vitaldb is None:
         raise ImportError("pip install vitaldb 필요")
     path = VITAL_DIR / f"{caseid:04d}.vital"
     if not path.exists():
         return None
-    try:
-        vf = vitaldb.VitalFile(str(path))
-        return vf.to_pandas(TRACKS_VITAL, SAMPLE_INTERVAL_SEC)
-    except Exception:
-        return None
+    
+    for attempt in range(max_retries):
+        try:
+            vf = vitaldb.VitalFile(str(path))
+            return vf.to_pandas(TRACKS_VITAL, SAMPLE_INTERVAL_SEC)
+        except Exception as e:
+            if attempt < max_retries - 1:
+                continue  # 재시도
+            return None
 
 
 def build_labels_for_case(df: pd.DataFrame) -> np.ndarray:
