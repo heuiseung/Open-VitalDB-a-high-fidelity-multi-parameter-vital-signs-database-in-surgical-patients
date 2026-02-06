@@ -39,7 +39,7 @@ def main() -> None:
         return
     # 3) GitHub (소스만, checkpoints/ 데이터 제외)
     run(["git", "add", "run_all.py", "train_model.py", "build_dataset.py", "config.py", "data_loader.py"])
-    run(["git", "add", "run_continuous.py", "README.md", "QUICKSTART.md", ".github/SYNC.md"])
+    run(["git", "add", "run_continuous.py", "run_continuous.bat", "README.md", "QUICKSTART.md", ".github/SYNC.md"])
     run(["git", "status", "--short"])
     run(["git", "commit", "-m", "자동: 파이프라인 실행 후 동기화"])
     if run(["git", "push", "origin", "main"]):
