@@ -76,11 +76,18 @@ def main() -> None:
             X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
         )
         print("[안내] 라벨이 한쪽만 있어 stratify 생략")
-    device = torch.device(DEVICE if torch.cuda.is_available() else "cpu")
+    # CUDA 설정
+    use_cuda = torch.cuda.is_available() and DEVICE.startswith("cuda")
+    device = torch.device(DEVICE if use_cuda else "cpu")
+    torch.backends.cudnn.benchmark = True
     print(f"[진행상황] 학습 장치: {device} | train {len(X_train)}건, test {len(X_test)}건")
-    train_ds = TensorDataset(
-        torch.from_numpy(X_train), torch.from_numpy(y_train)
-    )
+
+    # 데이터를 GPU 메모리에 올려서 학습 (가능한 경우)
+    X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32)
+    y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32)
+    X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32)
+
+    train_ds = TensorDataset(X_train_t, y_train_t)
     train_loader = DataLoader(train_ds, batch_size=256, shuffle=True, num_workers=0)
     model = HypoNet(len(feature_cols)).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -95,8 +102,8 @@ def main() -> None:
                     model, opt, step,
                     f"최대 학습 스텝 {MAX_TRAIN_STEPS} 도달 (과금 방지)",
                 )
-            batch_x = batch_x.to(device)
-            batch_y = batch_y.float().unsqueeze(1).to(device)
+            # 입력 배치는 이미 적절한 디바이스에 있음
+            batch_y = batch_y.float().unsqueeze(1)
             opt.zero_grad()
             logits = model(batch_x).unsqueeze(1)
             loss = loss_fn(logits, batch_y)
@@ -119,8 +126,8 @@ def main() -> None:
     print("[진행상황] 평가 중...")
     model.eval()
     with torch.no_grad():
-        X_t = torch.from_numpy(X_test).to(device)
-        logits = model(X_t).cpu().numpy()
+        X_t = X_test_t
+        logits = model(X_t).detach().cpu().numpy()
     y_prob = 1 / (1 + np.exp(-logits))
     y_pred = (y_prob >= 0.5).astype(int)
     print("\n[결과] 분류 성능 (한글)")
