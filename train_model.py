@@ -1,4 +1,12 @@
 """PyTorch CUDA 학습 - 진행률 표시, 최대 스텝 도달 시 저장 후 중단 (과금 방지)"""
+import sys
+import io
+if getattr(sys.stdout, "buffer", None) and (sys.stdout.encoding or "").lower() != "utf-8":
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import pandas as pd
 import numpy as np
 from pathlib import Path

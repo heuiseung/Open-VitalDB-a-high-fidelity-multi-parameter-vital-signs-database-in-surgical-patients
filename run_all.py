@@ -1,4 +1,21 @@
 """전체 파이프라인 (진행상황 한글 표시, 과금 방지)"""
+import sys
+import io
+
+# 터미널 한글 출력 (chcp 65001 또는 Windows 기본 터미널)
+if getattr(sys.stdout, "buffer", None):
+    try:
+        if (sys.stdout.encoding or "").lower() != "utf-8":
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if getattr(sys.stderr, "buffer", None):
+    try:
+        if (sys.stderr.encoding or "").lower() != "utf-8":
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from pathlib import Path
 from config import DATASET_PATH, check_data_paths
 
