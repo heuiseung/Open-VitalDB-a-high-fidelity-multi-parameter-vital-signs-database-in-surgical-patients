@@ -76,13 +76,18 @@ def main() -> None:
             X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
         )
         print("[안내] 라벨이 한쪽만 있어 stratify 생략")
-    # CUDA 설정
+    # CUDA 설정 — GPU 활용, 데이터를 GPU에 올려 학습
     use_cuda = torch.cuda.is_available() and DEVICE.startswith("cuda")
     device = torch.device(DEVICE if use_cuda else "cpu")
-    torch.backends.cudnn.benchmark = True
+    if use_cuda:
+        torch.backends.cudnn.benchmark = True
+        gpu_name = torch.cuda.get_device_name(0)
+        gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        print(f"[CUDA] GPU 사용: {gpu_name} (약 {gpu_mem:.1f} GB)")
+        print("[CUDA] 학습 데이터를 GPU 메모리에 올려 진행합니다.")
     print(f"[진행상황] 학습 장치: {device} | train {len(X_train)}건, test {len(X_test)}건")
 
-    # 데이터를 GPU 메모리에 올려서 학습 (가능한 경우)
+    # 데이터를 GPU 메모리에 올려서 학습 (GPU 사용 시)
     X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32)
     y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32)
     X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32)

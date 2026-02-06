@@ -18,7 +18,7 @@ from config import (
 from data_loader import load_vital_case, build_labels_for_case
 
 LOOKBACK_SEC = LOOKBACK_MIN * 60
-MAX_CASES = None  # 전체 데이터 처리
+MAX_CASES = 500  # 테스트: 500개로 제한하여 빠르게 검증
 
 
 def extract_features(df: pd.DataFrame, start_idx: int) -> dict | None:

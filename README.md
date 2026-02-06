@@ -1,6 +1,9 @@
 # 수술 중 저혈압(Hypotension) 조기 예측
 
-간단한 안내서입니다. 이 프로젝트는 VitalDB 원시 신호로부터 5분 후 발생할 저혈압(MAP 기준)을 예측하는 파이프라인입니다.
+**GitHub**: [heuiseung/Open-VitalDB-a-high-fidelity-multi-parameter-vital-signs-database-in-surgical-patients](https://github.com/heuiseung/Open-VitalDB-a-high-fidelity-multi-parameter-vital-signs-database-in-surgical-patients)  
+(서울대병원 VitalDB 데이터 기반)
+
+이 프로젝트는 VitalDB 원시 신호로부터 **5분 후** 발생할 저혈압(MAP 기준)을 예측하는 파이프라인입니다.
 
 요약
 - 입력: VitalDB vital files (`vital_files/`) 및 `clinical_data.csv`

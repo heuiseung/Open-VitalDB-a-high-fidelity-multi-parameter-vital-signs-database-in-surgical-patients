@@ -1,5 +1,7 @@
 # Cursor · VS Code · GitHub 동기화
 
+**저장소**: https://github.com/heuiseung/Open-VitalDB-a-high-fidelity-multi-parameter-vital-signs-database-in-surgical-patients  
+
 이 저장소는 **Cursor**와 **VS Code**에서 같은 GitHub 원격과 연동해 사용할 수 있습니다.
 
 ## GitHub에 자동 저장 (권장)
