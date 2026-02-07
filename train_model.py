@@ -15,10 +15,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from config import (
     TEST_SIZE,
+    VAL_RATIO,
+    N_EPOCHS,
     RANDOM_STATE,
     DEVICE,
     DATASET_PATH,
@@ -74,16 +77,69 @@ def main() -> None:
     feature_cols = [c for c in df.columns if c not in ("caseid", target)]
     X = df[feature_cols].fillna(0).values.astype(np.float32)
     y = df[target].values.astype(np.int64)
-    # 한쪽 클래스만 있으면 stratify 불가
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
-        )
-    except ValueError:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
-        )
-        print("[안내] 라벨이 한쪽만 있어 stratify 생략")
+    caseids = df["caseid"].values if "caseid" in df.columns else None
+
+    # 케이스(caseid) 단위 분할: train / 검증 / 테스트
+    val_cases = np.array([])
+    X_val = np.zeros((0, 0))
+    y_val = np.array([], dtype=np.int64)
+    if caseids is not None and len(np.unique(caseids)) > 1:
+        unique_cases = np.unique(caseids)
+        try:
+            train_cases, test_cases = train_test_split(
+                unique_cases, test_size=TEST_SIZE, random_state=RANDOM_STATE
+            )
+            if len(train_cases) > 1 and VAL_RATIO > 0:
+                train_cases, val_cases = train_test_split(
+                    train_cases, test_size=VAL_RATIO, random_state=RANDOM_STATE
+                )
+                val_mask = np.isin(caseids, val_cases)
+                X_val = X[val_mask].astype(np.float32)
+                y_val = y[val_mask]
+            else:
+                X_val = np.zeros((0, X.shape[1]), dtype=np.float32)
+                y_val = np.array([], dtype=np.int64)
+        except Exception:
+            train_cases = unique_cases[: int(len(unique_cases) * (1 - TEST_SIZE))]
+            test_cases = unique_cases[int(len(unique_cases) * (1 - TEST_SIZE)) :]
+            X_val = np.zeros((0, X.shape[1]), dtype=np.float32)
+            y_val = np.array([], dtype=np.int64)
+        train_mask = np.isin(caseids, train_cases)
+        test_mask = np.isin(caseids, test_cases)
+        X_train, X_test = X[train_mask], X[test_mask]
+        y_train, y_test = y[train_mask], y[test_mask]
+        print(f"[개선] 케이스 단위 분할: train {len(train_cases)}케이스, val {len(val_cases)}케이스, test {len(test_cases)}케이스")
+    else:
+        try:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
+            )
+        except ValueError:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+            )
+            print("[안내] 라벨이 한쪽만 있어 stratify 생략")
+        if VAL_RATIO > 0 and len(X_train) > 10:
+            try:
+                X_train, X_val, y_train, y_val = train_test_split(
+                    X_train, y_train, test_size=VAL_RATIO, random_state=RANDOM_STATE, stratify=y_train
+                )
+            except ValueError:
+                X_train, X_val, y_train, y_val = train_test_split(
+                    X_train, y_train, test_size=VAL_RATIO, random_state=RANDOM_STATE
+                )
+            X_val = X_val.astype(np.float32)
+        else:
+            X_val = np.zeros((0, X_train.shape[1]), dtype=np.float32)
+            y_val = np.array([], dtype=np.int64)
+
+    # 특성 표준화 (학습 데이터 기준 fit, train/val/test 동일 스케일)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train).astype(np.float32)
+    X_test = scaler.transform(X_test).astype(np.float32)
+    if len(X_val) > 0:
+        X_val = scaler.transform(X_val).astype(np.float32)
+    print("[개선] 특성 표준화(StandardScaler) 적용")
     # CUDA 설정 — GPU 활용, 데이터를 GPU에 올려 학습
     use_cuda = torch.cuda.is_available() and DEVICE.startswith("cuda")
     device = torch.device(DEVICE if use_cuda else "cpu")
@@ -99,43 +155,80 @@ def main() -> None:
     X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32)
     y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32)
     X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32)
+    has_val = len(X_val) > 0
+    if has_val:
+        X_val_t = torch.from_numpy(X_val).to(device=device, dtype=torch.float32)
 
     train_ds = TensorDataset(X_train_t, y_train_t)
     train_loader = DataLoader(train_ds, batch_size=256, shuffle=True, num_workers=0)
     model = HypoNet(len(feature_cols)).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss_fn = nn.BCEWithLogitsLoss()
-    model.train()
+    n_pos = int(y_train.sum())
+    n_neg = len(y_train) - n_pos
+    pos_weight = torch.tensor([n_neg / max(n_pos, 1)], dtype=torch.float32, device=device)
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    if n_pos > 0:
+        print(f"[개선] 클래스 가중치 적용 (양성 비율 반영, pos_weight≈{pos_weight.item():.2f})")
+    print(f"[개선] 다중 에폭: {N_EPOCHS}회, 검증 세트: {'사용' if has_val else '없음'}")
+
+    best_auc = -1.0
     step = 0
-    try:
-        pbar = tqdm(train_loader, desc="[2/2] 모델 학습 중", unit="배치")
-        for batch_x, batch_y in pbar:
-            if MAX_TRAIN_STEPS is not None and step >= MAX_TRAIN_STEPS:
-                save_checkpoint(
-                    model, opt, step,
-                    f"최대 학습 스텝 {MAX_TRAIN_STEPS} 도달 (과금 방지)",
-                )
-            # 입력 배치는 이미 적절한 디바이스에 있음
-            batch_y = batch_y.float().unsqueeze(1)
-            opt.zero_grad()
-            logits = model(batch_x).unsqueeze(1)
-            loss = loss_fn(logits, batch_y)
-            loss.backward()
-            opt.step()
-            pbar.set_postfix(loss=f"{loss.item():.4f}")
-            step += 1
-    except torch.cuda.OutOfMemoryError:
-        save_checkpoint(model, opt, step, "CUDA OOM")
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        {
-            "model_state": model.state_dict(),
-            "optimizer_state": opt.state_dict(),
-            "step": step,
-        },
-        MODEL_PATH,
-    )
-    print(f"\n[진행상황] 최종 모델 저장 완료 -> {MODEL_PATH}")
+    for epoch in range(N_EPOCHS):
+        model.train()
+        epoch_loss = 0.0
+        n_batch = 0
+        pbar = tqdm(train_loader, desc=f"[에폭 {epoch+1}/{N_EPOCHS}] 학습", unit="배치")
+        try:
+            for batch_x, batch_y in pbar:
+                if MAX_TRAIN_STEPS is not None and step >= MAX_TRAIN_STEPS:
+                    break
+                batch_y = batch_y.float().unsqueeze(1)
+                opt.zero_grad()
+                logits = model(batch_x).unsqueeze(1)
+                loss = loss_fn(logits, batch_y)
+                loss.backward()
+                opt.step()
+                epoch_loss += loss.item()
+                n_batch += 1
+                step += 1
+                pbar.set_postfix(loss=f"{loss.item():.4f}")
+        except torch.cuda.OutOfMemoryError:
+            torch.save({"model_state": model.state_dict(), "optimizer_state": opt.state_dict(), "step": step}, MODEL_PATH)
+            print("\n[중단] CUDA OOM")
+            break
+        if MAX_TRAIN_STEPS is not None and step >= MAX_TRAIN_STEPS:
+            break
+
+        # 검증 AUC 계산 및 best 모델 저장
+        if has_val and len(y_val) > 0:
+            model.eval()
+            with torch.no_grad():
+                logits_val = model(X_val_t).detach().cpu().numpy()
+            y_val_prob = 1 / (1 + np.exp(-logits_val))
+            try:
+                val_auc = roc_auc_score(y_val, y_val_prob)
+                if val_auc > best_auc:
+                    best_auc = val_auc
+                    torch.save(
+                        {"model_state": model.state_dict(), "optimizer_state": opt.state_dict(), "step": step, "epoch": epoch, "val_auc": val_auc},
+                        MODEL_PATH,
+                    )
+                tqdm.write(f"  검증 AUC: {val_auc:.4f} (best: {best_auc:.4f})")
+            except ValueError:
+                pass
+        else:
+            # 검증 없으면 매 에폭 저장
+            torch.save(
+                {"model_state": model.state_dict(), "optimizer_state": opt.state_dict(), "step": step, "epoch": epoch},
+                MODEL_PATH,
+            )
+
+    # best 모델 로드 (검증 사용 시; 아니면 마지막 모델이 이미 MODEL_PATH에 있음)
+    if has_val and best_auc >= 0:
+        ckpt = torch.load(MODEL_PATH, map_location=device)
+        model.load_state_dict(ckpt["model_state"])
+    print(f"\n[진행상황] 최종 모델 저장 완료 -> {MODEL_PATH}" + (f" (검증 best AUC: {best_auc:.4f})" if best_auc >= 0 else ""))
     print("[진행상황] 평가 중...")
     model.eval()
     with torch.no_grad():

@@ -35,11 +35,13 @@ TRACK_HR = "Solar8000/HR"
 TRACKS_VITAL = [TRACK_MAP, TRACK_SBP, TRACK_DBP, TRACK_HR]
 
 TEST_SIZE = 0.2
+VAL_RATIO = 0.15  # 학습 데이터 중 검증 비율 (케이스 단위)
+N_EPOCHS = 10     # 다중 에폭
 RANDOM_STATE = 42
 DEVICE = "cuda"
 
 MAX_RUNTIME_MINUTES = None  # 시간 제한 없음
-MAX_TRAIN_STEPS = None      # 스텝 제한 없음
+MAX_TRAIN_STEPS = None      # 스텝 제한 없음 (에폭당이 아닌 전체)
 
 DATASET_PATH = BASE_DIR / "hypotension_dataset.csv"
 CHECKPOINT_DIR = BASE_DIR / "checkpoints"

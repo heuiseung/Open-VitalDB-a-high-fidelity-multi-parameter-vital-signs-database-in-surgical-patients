@@ -11,6 +11,8 @@ from config import (
     LOOKBACK_MIN,
     TRACK_MAP,
     TRACK_HR,
+    TRACK_SBP,
+    TRACK_DBP,
     DATASET_PATH,
     MAX_RUNTIME_MINUTES,
     check_data_paths,
@@ -22,13 +24,14 @@ MAX_CASES = 500  # 테스트: 500개로 제한하여 빠르게 검증
 
 
 def extract_features(df: pd.DataFrame, start_idx: int) -> dict | None:
-    """start_idx 기준 LOOKBACK 구간에서 MAP/HR 요약 통계 추출."""
+    """LOOKBACK 구간에서 MAP/HR/SBP/DBP 요약 통계 + 추세 추출 (특성 확장)."""
     end_idx = min(start_idx + LOOKBACK_SEC, len(df))
     if end_idx - start_idx < LOOKBACK_SEC // 2:
         return None
     seg = df.iloc[start_idx:end_idx]
     feats = {}
-    for col in [TRACK_MAP, TRACK_HR]:
+    tracks = [TRACK_MAP, TRACK_HR, TRACK_SBP, TRACK_DBP]
+    for col in tracks:
         if col not in seg.columns:
             continue
         s = pd.to_numeric(seg[col], errors="coerce").dropna()
@@ -36,8 +39,11 @@ def extract_features(df: pd.DataFrame, start_idx: int) -> dict | None:
             continue
         key = col.split("/")[-1]
         feats[f"{key}_mean"] = s.mean()
-        feats[f"{key}_std"] = s.std()
+        feats[f"{key}_std"] = s.std() if len(s) > 1 else 0.0
         feats[f"{key}_min"] = s.min()
+        feats[f"{key}_max"] = s.max()
+        # 추세: (끝 - 처음) / 길이 (구간 내 변화율)
+        feats[f"{key}_trend"] = (s.iloc[-1] - s.iloc[0]) / len(s) if len(s) > 0 else 0.0
     return feats if feats else None
 
 
