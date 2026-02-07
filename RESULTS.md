@@ -1,38 +1,36 @@
 # 프로젝트 결과 요약
 
+**최종 업데이트**: 파이프라인 완료 (다중 에폭 + 검증 best 모델, CUDA/GPU 학습)
+
 ## 모델 정보
 - 체크포인트: `checkpoints/hypo_model.pt`
 - 저장 경로: C:\Users\sck32\hypo_vitaldb\checkpoints\hypo_model.pt
 - 파일 크기: 38 KB
 
 ## 학습 데이터
-- 전체 샘플 수: 97,802 (train 72,641 / test 18,161 — 모델 출력 기준)
-  (참고: `hypotension_dataset.csv`는 프로젝트 루트에 있습니다.)
+- 테스트 샘플: 19,318건 (케이스 단위 분할, 검증 15% 분리)
+- 참고: `hypotension_dataset.csv`는 프로젝트 루트에 있습니다.
 
-## 평가 성능 (최근 GPU 학습 기준)
-- **Accuracy**: 0.79
-- **AUC-ROC**: 약 0.849 ~ 0.85
+## 평가 성능 (최종 실행 기준 — 다중 에폭 + 검증 best)
+
+- **Accuracy**: 0.85
+- **AUC-ROC**: **0.925** (검증 best AUC: 0.960)
 
 ### 클래스 별
 - **저혈압 없음** (Negative)
-  - Precision: 0.80 ~ 0.82
-  - Recall: 0.90 ~ 0.94
-  - F1-score: 0.86
-  - Support: 12,928
+  - Precision: 0.91, Recall: 0.86, F1-score: 0.88
+  - Support: 12,817
 
 - **저혈압** (Positive)
-  - Precision: 0.67 ~ 0.73
-  - Recall: 0.41 ~ 0.51
-  - F1-score: 0.52 ~ 0.58
-  - Support: 5,233
+  - Precision: 0.75, Recall: 0.84, F1-score: 0.79
+  - Support: 6,501
 
-### 혼동 행렬 (예시)
+### 혼동 행렬 (테스트 19,318건)
 ```
               예측: 음성   예측: 양성
-실제 음성       약 11,800~12,100    약 800~1,100
-실제 양성       약 2,500~3,100      약 2,100~2,500
+실제 음성        10,966      1,851
+실제 양성         1,043      5,458
 ```
-(매 실행마다 미세하게 달라질 수 있음)
 
 ## 재현 및 사용법
 - 모델 로드 예시 (PyTorch):

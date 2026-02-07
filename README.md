@@ -51,4 +51,4 @@ python run_all.py
 - 질문이나 병합(merge) 관련 요청은 GitHub 이슈로 남겨 주세요.
 
 ---
-최신 업데이트: 개선된 라벨 로직 및 전체 데이터 재구축 작업이 진행 중입니다. 자세한 내용은 `IMPROVEMENT_REPORT.md`를 참조하세요.
+최신: 파이프라인 완료 (다중 에폭+검증, 특성 확장, CUDA 학습). 최종 성능은 `RESULTS.md` 참조 (AUC-ROC 0.925).
