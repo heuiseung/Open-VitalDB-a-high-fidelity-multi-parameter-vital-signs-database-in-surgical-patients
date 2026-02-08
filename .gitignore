@@ -1,10 +1,19 @@
-# VitalDB 데이터 (실수로 올라가는 것 방지)
+# ============================================
+# 절대 GitHub에 올리지 않을 항목
+# ============================================
 VitalDB_Data/
 vital_files/
 *.vital
 *.zip
+*.csv
+*.xlsx
+*.pth
+*.pt
+checkpoints/
 
-# Python
+# ============================================
+# Python 통상 제외
+# ============================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,24 +29,22 @@ build/
 venv/
 env/
 
-# 프로젝트 출력 (용량 큼, 로컬에서 생성)
-hypotension_dataset.csv
-checkpoints/
-*.pt
-*.pth
-
 # Jupyter
 .ipynb_checkpoints/
 */.ipynb_checkpoints/
 
+# ============================================
 # IDE / OS
+# ============================================
 .vscode/settings.json
 .idea/
 *.swp
 .DS_Store
 Thumbs.db
 
+# ============================================
 # 기타
+# ============================================
 *.log
 .env
 .env.local
