@@ -1,3 +1,9 @@
+# VitalDB 데이터 (실수로 올라가는 것 방지)
+VitalDB_Data/
+vital_files/
+*.vital
+*.zip
+
 # Python
 __pycache__/
 *.py[cod]
@@ -18,6 +24,7 @@ env/
 hypotension_dataset.csv
 checkpoints/
 *.pt
+*.pth
 
 # Jupyter
 .ipynb_checkpoints/
