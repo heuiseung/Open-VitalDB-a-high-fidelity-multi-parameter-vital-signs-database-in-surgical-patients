@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """데이터셋 빌드 진행 상황 모니터링 (3초마다 갱신)"""
 import os
+import sys
 import time
 import subprocess
 from pathlib import Path
 
-csv_path = Path("hypotension_dataset.csv")
+# 프로젝트 루트를 path에 추가 (scripts/에서 실행 시 루트 모듈 import 가능)
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+csv_path = _root / "hypotension_dataset.csv"
 
 def get_csv_stats():
     """현재 CSV 파일 통계 반환"""

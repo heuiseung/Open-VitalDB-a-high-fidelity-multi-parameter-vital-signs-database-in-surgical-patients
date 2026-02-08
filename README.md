@@ -146,7 +146,11 @@ Key parameters (e.g., hypotension threshold, lookback and prediction horizon, ba
 
 ## License and Citation
 
-This project is for research and portfolio purposes. When using [VitalDB](https://vitaldb.net/), please comply with its license and citation requirements. If you use this code or build on this pipeline, appropriate acknowledgment is appreciated.
+**This repository (code):** MIT License. See [LICENSE](LICENSE) in the project root.
+
+**VitalDB data (Disclaimer):** This project uses data from [VitalDB](https://vitaldb.net/) (Seoul National University Hospital). This repository is not affiliated with VitalDB or SNUH. Use of VitalDB data is subject to **VitalDB’s own terms, license, and citation requirements**. You are solely responsible for complying with VitalDB’s policies when downloading or using their data. The authors of this codebase provide no warranty regarding VitalDB data or its suitability for any purpose.
+
+If you use this code or build on this pipeline, appropriate acknowledgment is appreciated.
 
 ---
 

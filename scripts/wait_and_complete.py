@@ -7,12 +7,18 @@
 3. GitHub에 강제 푸시
 """
 import os
+import sys
 import time
 import subprocess
 import pandas as pd
 from pathlib import Path
 
-csv_path = Path("hypotension_dataset.csv")
+# 프로젝트 루트를 path에 추가 (scripts/에서 실행 시 루트 모듈 import 가능)
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+csv_path = _root / "hypotension_dataset.csv"
 
 print("=" * 70)
 print("⏳ 데이터셋 빌드 완료 대기 중...")

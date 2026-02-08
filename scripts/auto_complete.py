@@ -13,7 +13,12 @@ import pandas as pd
 import subprocess
 from pathlib import Path
 
-csv_path = Path("hypotension_dataset.csv")
+# 프로젝트 루트를 path에 추가 (scripts/에서 실행 시 루트 모듈 import 가능)
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+csv_path = _root / "hypotension_dataset.csv"
 
 def wait_for_csv(timeout_sec=1800):  # 30분 대기
     """CSV 파일 완성 대기"""
@@ -65,7 +70,7 @@ def build_full_dataset():
     print("=" * 70)
     
     # MAX_CASES = None으로 변경
-    config_file = Path("build_dataset.py")
+    config_file = _root / "build_dataset.py"
     content = config_file.read_text(encoding='utf-8')
     content = content.replace(
         "MAX_CASES = 500  # 테스트: 500개로 제한",
@@ -76,10 +81,10 @@ def build_full_dataset():
     # CSV 삭제
     csv_path.unlink(missing_ok=True)
     
-    # 빌드 시작
+    # 빌드 시작 (프로젝트 루트에서 실행)
     subprocess.run([
         sys.executable, "build_dataset.py"
-    ], check=False)
+    ], cwd=_root, check=False)
 
 def train_model():
     """모델 재학습"""
@@ -89,7 +94,7 @@ def train_model():
     
     subprocess.run([
         sys.executable, "train_model.py"
-    ], check=False)
+    ], cwd=_root, check=False)
 
 def commit_and_push():
     """로컬 커밋 생성 및 GitHub 강제 푸시"""

@@ -1,5 +1,8 @@
 """
 학습 루프 및 실행 코드.
+
+데이터 로드 → GPU 배치 학습 → 검증 AUC 기준 best 모델 저장 → 테스트 평가 출력.
+config, data_loader, model, utils에 의존하며, 단독 실행 시 `python train.py`로 호출.
 """
 import numpy as np
 import torch
@@ -22,6 +25,19 @@ from utils import set_utf8_stdout, get_device, save_checkpoint
 
 
 def main() -> None:
+    """전체 학습 파이프라인: 전처리 → 학습 → 검증 best 저장 → 테스트 평가.
+
+    데이터셋이 없으면 안내만 하고 종료. 있으면 케이스 단위 분할·표준화 후
+    GPU에 텐서를 올리고, BCEWithLogitsLoss + pos_weight로 불균형을 보정하며 학습.
+    검증 세트가 있으면 에폭마다 AUC를 계산해 best 모델만 저장하고, 마지막에 해당
+    체크포인트를 로드해 테스트 평가를 출력합니다.
+
+    Returns:
+        None. 모든 결과는 콘솔 출력 및 MODEL_PATH 체크포인트로 남김.
+
+    Raises:
+        torch.cuda.OutOfMemoryError: GPU 메모리 부족 시 예외 후 모델 저장하고 루프 종료.
+    """
     set_utf8_stdout()
 
     if not DATASET_PATH.exists():
@@ -46,6 +62,7 @@ def main() -> None:
         print("[CUDA] 학습/검증/테스트 데이터를 GPU 메모리에 올립니다.")
     print(f"[진행] 학습 장치: {device} | train {len(X_train)}건, test {len(X_test)}건")
 
+    # 전체 학습/테스트(및 검증) 데이터를 한 번에 GPU로 올려 배치 시 추가 복사 없이 사용
     X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32, non_blocking=True)
     y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32, non_blocking=True)
     X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32, non_blocking=True)
@@ -58,6 +75,7 @@ def main() -> None:
     in_dim = len(feature_cols)
     model = HypotensionModel(in_dim=in_dim).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    # 양성(저혈압)이 적을 때 손실에서 양성 오분류 패널티를 키우기 위함
     n_pos = int(y_train.sum())
     n_neg = len(y_train) - n_pos
     pos_weight = torch.tensor([n_neg / max(n_pos, 1)], dtype=torch.float32, device=device)
@@ -86,12 +104,14 @@ def main() -> None:
                 step += 1
                 pbar.set_postfix(loss=f"{loss.item():.4f}")
         except torch.cuda.OutOfMemoryError:
+            # OOM 시 현재 상태라도 저장 후 종료 (과금/장시간 실행 방지)
             torch.save({"model_state": model.state_dict(), "optimizer_state": opt.state_dict(), "step": step}, MODEL_PATH)
             print("\n[중단] CUDA OOM")
             break
         if MAX_TRAIN_STEPS is not None and step >= MAX_TRAIN_STEPS:
             break
 
+        # 검증이 있으면 에폭마다 AUC 계산 후 best만 저장 (과적합 완화)
         if has_val and len(y_val) > 0:
             model.eval()
             with torch.no_grad():
@@ -115,11 +135,13 @@ def main() -> None:
             except ValueError:
                 pass
         else:
+            # 검증 없으면 매 에폭 마지막 가중치 저장
             torch.save(
                 {"model_state": model.state_dict(), "optimizer_state": opt.state_dict(), "step": step, "epoch": epoch},
                 MODEL_PATH,
             )
 
+    # 검증으로 best를 저장했으면 그 가중치로 테스트 평가 (최종 보고용)
     if has_val and best_auc >= 0:
         ckpt = torch.load(MODEL_PATH, map_location=device)
         model.load_state_dict(ckpt["model_state"])
