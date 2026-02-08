@@ -29,6 +29,7 @@ from config import (
     MODEL_PATH,
     TRAIN_STATE_PATH,
     MAX_TRAIN_STEPS,
+    BATCH_SIZE,
 )
 
 
@@ -140,27 +141,30 @@ def main() -> None:
     if len(X_val) > 0:
         X_val = scaler.transform(X_val).astype(np.float32)
     print("[개선] 특성 표준화(StandardScaler) 적용")
-    # CUDA 설정 — GPU 활용, 데이터를 GPU에 올려 학습
+    # CUDA 설정 — GPU/CUDA 최대 활용, 데이터 전부 GPU 상주
     use_cuda = torch.cuda.is_available() and DEVICE.startswith("cuda")
     device = torch.device(DEVICE if use_cuda else "cpu")
     if use_cuda:
+        torch.cuda.empty_cache()
         torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
         gpu_name = torch.cuda.get_device_name(0)
         gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        print(f"[CUDA] GPU 사용: {gpu_name} (약 {gpu_mem:.1f} GB)")
-        print("[CUDA] 학습 데이터를 GPU 메모리에 올려 진행합니다.")
+        print(f"[CUDA] GPU 최대 활용: {gpu_name} (약 {gpu_mem:.1f} GB)")
+        print("[CUDA] 학습/검증/테스트 데이터를 GPU 메모리에 올려 진행합니다.")
     print(f"[진행상황] 학습 장치: {device} | train {len(X_train)}건, test {len(X_test)}건")
 
-    # 데이터를 GPU 메모리에 올려서 학습 (GPU 사용 시)
-    X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32)
-    y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32)
-    X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32)
+    # 데이터 전부 GPU 메모리에 상주 (최대 활용)
+    X_train_t = torch.from_numpy(X_train).to(device=device, dtype=torch.float32, non_blocking=True)
+    y_train_t = torch.from_numpy(y_train).to(device=device, dtype=torch.float32, non_blocking=True)
+    X_test_t = torch.from_numpy(X_test).to(device=device, dtype=torch.float32, non_blocking=True)
     has_val = len(X_val) > 0
     if has_val:
-        X_val_t = torch.from_numpy(X_val).to(device=device, dtype=torch.float32)
+        X_val_t = torch.from_numpy(X_val).to(device=device, dtype=torch.float32, non_blocking=True)
 
     train_ds = TensorDataset(X_train_t, y_train_t)
-    train_loader = DataLoader(train_ds, batch_size=256, shuffle=True, num_workers=0)
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=False)
     model = HypoNet(len(feature_cols)).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     n_pos = int(y_train.sum())
@@ -169,7 +173,7 @@ def main() -> None:
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     if n_pos > 0:
         print(f"[개선] 클래스 가중치 적용 (양성 비율 반영, pos_weight≈{pos_weight.item():.2f})")
-    print(f"[개선] 다중 에폭: {N_EPOCHS}회, 검증 세트: {'사용' if has_val else '없음'}")
+    print(f"[개선] 다중 에폭: {N_EPOCHS}회, 배치 크기: {BATCH_SIZE} (GPU 최대 활용), 검증 세트: {'사용' if has_val else '없음'}")
 
     best_auc = -1.0
     step = 0

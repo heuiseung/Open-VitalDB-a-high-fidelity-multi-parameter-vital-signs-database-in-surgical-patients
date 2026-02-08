@@ -20,7 +20,7 @@ from config import (
 from data_loader import load_vital_case, build_labels_for_case
 
 LOOKBACK_SEC = LOOKBACK_MIN * 60
-MAX_CASES = 500  # 테스트: 500개로 제한하여 빠르게 검증
+MAX_CASES = None  # 전체 케이스(6388) 구축 — 시간 오래 걸림, GPU 재학습용
 
 
 def extract_features(df: pd.DataFrame, start_idx: int) -> dict | None:
@@ -103,7 +103,7 @@ def main() -> None:
         save_and_exit(rows, "시스템 메모리 부족")
     out = pd.DataFrame(rows)
     out.to_csv(DATASET_PATH, index=False)
-    print(f"\n[진행상황] 데이터셋 구축 완료 — {len(out)}행 저장: {DATASET_PATH}")
+    print(f"\n[진행상황] 데이터셋 구축 완료 - {len(out)}행 저장: {DATASET_PATH}")
 
 
 if __name__ == "__main__":

@@ -1,35 +1,37 @@
 # 프로젝트 결과 요약
 
-**최종 업데이트**: 파이프라인 완료 (다중 에폭 + 검증 best 모델, CUDA/GPU 학습)
+**최종 업데이트**: GPU/CUDA 전체 재학습 완료 (특성 확장 데이터 500케이스, 데이터 GPU 상주)
 
 ## 모델 정보
 - 체크포인트: `checkpoints/hypo_model.pt`
 - 저장 경로: C:\Users\sck32\hypo_vitaldb\checkpoints\hypo_model.pt
-- 파일 크기: 38 KB
+- 학습 장치: **NVIDIA GeForce RTX 4070** (약 12 GB), CUDA
 
-## 학습 데이터
-- 테스트 샘플: 19,318건 (케이스 단위 분할, 검증 15% 분리)
-- 참고: `hypotension_dataset.csv`는 프로젝트 루트에 있습니다.
+## 학습 데이터 (이번 실행)
+- **특성 확장 데이터**: 500케이스 → train 62,150건 / val 분리 / test 19,318건
+- 케이스 단위 분할: train 340, val 60, test 100케이스
+- 학습/검증/테스트 텐서 **전부 GPU 메모리 상주** (non_blocking, BATCH_SIZE=512, TF32)
 
-## 평가 성능 (최종 실행 기준 — 다중 에폭 + 검증 best)
+## 평가 성능 (GPU 전체 재학습 기준)
 
-- **Accuracy**: 0.85
-- **AUC-ROC**: **0.925** (검증 best AUC: 0.960)
+- **Accuracy**: 0.84
+- **AUC-ROC (테스트)**: **0.922**
+- **검증 best AUC**: 0.959 (에폭 10에서 저장)
 
 ### 클래스 별
 - **저혈압 없음** (Negative)
-  - Precision: 0.91, Recall: 0.86, F1-score: 0.88
+  - Precision: 0.92, Recall: 0.84, F1-score: 0.88
   - Support: 12,817
 
 - **저혈압** (Positive)
-  - Precision: 0.75, Recall: 0.84, F1-score: 0.79
+  - Precision: 0.73, Recall: 0.85, F1-score: 0.79
   - Support: 6,501
 
 ### 혼동 행렬 (테스트 19,318건)
 ```
               예측: 음성   예측: 양성
-실제 음성        10,966      1,851
-실제 양성         1,043      5,458
+실제 음성        10,802      2,015
+실제 양성           996      5,505
 ```
 
 ## 재현 및 사용법

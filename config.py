@@ -39,6 +39,7 @@ VAL_RATIO = 0.15  # 학습 데이터 중 검증 비율 (케이스 단위)
 N_EPOCHS = 10     # 다중 에폭
 RANDOM_STATE = 42
 DEVICE = "cuda"
+BATCH_SIZE = 512  # GPU 최대 활용 (데이터 전부 GPU 상주, OOM 시 256으로 조정)
 
 MAX_RUNTIME_MINUTES = None  # 시간 제한 없음
 MAX_TRAIN_STEPS = None      # 스텝 제한 없음 (에폭당이 아닌 전체)
