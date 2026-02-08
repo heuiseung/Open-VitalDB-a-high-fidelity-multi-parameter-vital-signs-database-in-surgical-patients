@@ -29,6 +29,57 @@ Training is performed on GPU with CUDA; the full dataset is loaded into host mem
 
 ---
 
+## Model Architecture
+
+```mermaid
+graph LR
+    A[Input: ART Waveform<br>(1-min, 100Hz)] --> B[1D-CNN Layers<br>(Feature Extraction)]
+    B --> C[LSTM Layers<br>(Temporal Dependency)]
+    C --> D[Fully Connected Layer]
+    D --> E[Output: Hypotension Risk<br>(0 or 1)]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px
+```
+
+- **Input:** 1-minute ART (arterial pressure) waveform segment (e.g., 100 Hz).
+- **1D-CNN:** Local feature extraction from the raw/downsampled waveform.
+- **LSTM:** Captures temporal dependencies across the sequence.
+- **Output:** Binary risk (0 or 1) for hypotension within the prediction horizon.
+
+A more detailed block view of the 1D-CNN + LSTM pipeline:
+
+```mermaid
+flowchart LR
+    subgraph Input
+        I["ART waveform<br/>(B, 1, F)"]
+    end
+    subgraph CNN
+        C1["Conv1d + ReLU<br/>+ Dropout"]
+    end
+    subgraph LSTM
+        L1["LSTM layers<br/>(seq → hidden)"]
+    end
+    subgraph Output
+        O["FC → logits<br/>Binary risk"]
+    end
+    I --> C1 --> L1 --> O
+```
+
+---
+
+## Results
+
+| Metric    | Value   |
+|----------|---------|
+| **AUC-ROC** | **0.925** |
+| Task     | Binary classification (hypotension within 5 min) |
+| Validation | Case-level split; best model by validation AUC |
+
+The 1D-CNN + LSTM model achieves **AUC-ROC 0.925** on the test set, demonstrating strong discriminative performance for early prediction of intraoperative hypotension from arterial waveform features.
+
+---
+
 ## Key Features
 
 - **Local file–based loading:** Direct reading of VitalDB `.vital` files and `clinical_data.csv` from local storage (no cloud API dependency).
@@ -41,15 +92,17 @@ Training is performed on GPU with CUDA; the full dataset is loaded into host mem
 
 ```
 VitalDB-Hypotension-Prediction/
-├── README.md
-├── requirements.txt
-├── main.py             # Entry point: pipeline run (preprocess + train)
-├── data_loader.py      # VitalDB loading and label construction
-├── model.py            # Model definitions (e.g., 1D-CNN + LSTM)
-└── .gitignore
+├── docs/               # 각종 로그, 보고서, 한글 가이드
+├── scripts/            # 실행 배치 파일, 모니터링 스크립트
+├── notebooks/          # 주피터 노트북
+├── checkpoints/        # 모델 저장 폴더
+├── data_loader.py      # [핵심] 데이터 처리
+├── train_model.py      # [핵심] 모델 학습
+├── config.py           # [핵심] 설정
+├── requirements.txt    # 라이브러리 목록
+├── .gitignore
+└── README.md           # 메인 설명
 ```
-
-Additional modules (e.g., `config.py`, `build_dataset.py`, `train_model.py`) may be used internally by `main.py`.
 
 ---
 

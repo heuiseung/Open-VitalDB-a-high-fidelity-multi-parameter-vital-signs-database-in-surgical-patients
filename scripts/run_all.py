@@ -1,6 +1,12 @@
 """전체 파이프라인 (진행상황 한글 표시, 과금 방지)"""
 import sys
 import io
+from pathlib import Path
+
+# 프로젝트 루트를 path에 추가 (scripts/에서 실행 시 import 가능하도록)
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
 
 # 터미널 한글 출력 (chcp 65001 또는 Windows 기본 터미널)
 if getattr(sys.stdout, "buffer", None):
@@ -16,7 +22,6 @@ if getattr(sys.stderr, "buffer", None):
     except Exception:
         pass
 
-from pathlib import Path
 from config import DATASET_PATH, check_data_paths
 
 

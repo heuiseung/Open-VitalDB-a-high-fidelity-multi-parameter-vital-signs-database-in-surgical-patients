@@ -1,6 +1,6 @@
 # UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Set-Location $PSScriptRoot
+Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $py = $null
 $candidates = @(
@@ -26,5 +26,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host ""
 Write-Host "[2/2] 파이프라인 실행 중..."
-& $py run_all.py
+& $py scripts/run_all.py
 exit $LASTEXITCODE

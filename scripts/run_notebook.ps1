@@ -1,6 +1,6 @@
 # 노트북 자동 실행
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Set-Location $PSScriptRoot
+Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $py = $null
 @(
@@ -17,6 +17,6 @@ if (-not $py) {
 Write-Host "[1/2] 패키지 설치..."
 & $py -m pip install -q -r requirements.txt
 Write-Host "[2/2] 노트북 자동 실행..."
-& $py -m jupyter nbconvert --to notebook --execute --inplace hypotension_pipeline.ipynb
-Write-Host "완료. hypotension_pipeline.ipynb"
+& $py -m jupyter nbconvert --to notebook --execute --inplace notebooks/hypotension_pipeline.ipynb
+Write-Host "완료. notebooks/hypotension_pipeline.ipynb"
 exit $LASTEXITCODE

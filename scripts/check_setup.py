@@ -12,8 +12,10 @@ try:
 except Exception:
     pass
 
-# 프로젝트 루트 기준 실행
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# 프로젝트 루트 기준 실행 (scripts/에서 실행 시)
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
 
 from config import (
     BASE_DIR,

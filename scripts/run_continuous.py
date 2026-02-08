@@ -12,7 +12,8 @@ if getattr(sys.stdout, "buffer", None) and (sys.stdout.encoding or "").lower() !
     except Exception:
         pass
 
-ROOT = Path(__file__).resolve().parent
+# 프로젝트 루트 (scripts/ 한 단계 위)
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def run(cmd: list[str], cwd: Path = ROOT) -> bool:
@@ -28,18 +29,18 @@ def main() -> None:
     print("[자동] 설정 검증 → 파이프라인 → GitHub 동기화")
     print("=" * 50)
     # 1) 설정 검증
-    r = subprocess.run([sys.executable, "check_setup.py"], cwd=ROOT)
+    r = subprocess.run([sys.executable, "scripts/check_setup.py"], cwd=ROOT)
     if r.returncode != 0:
         print("[중단] 설정 검증 실패")
         return
     # 2) 파이프라인
-    r = subprocess.run([sys.executable, "run_all.py"], cwd=ROOT)
+    r = subprocess.run([sys.executable, "scripts/run_all.py"], cwd=ROOT)
     if r.returncode != 0:
         print("[중단] 파이프라인 실패")
         return
     # 3) GitHub (소스만, checkpoints/ 데이터 제외)
-    run(["git", "add", "run_all.py", "train_model.py", "build_dataset.py", "config.py", "data_loader.py"])
-    run(["git", "add", "run_continuous.py", "run_continuous.bat", "README.md", "QUICKSTART.md", ".github/SYNC.md"])
+    run(["git", "add", "main.py", "train.py", "train_model.py", "build_dataset.py", "config.py", "data_loader.py", "model.py", "utils.py"])
+    run(["git", "add", "scripts/run_all.py", "scripts/run_continuous.py", "scripts/run_continuous.bat", "README.md", "docs/QUICKSTART.md", ".github/SYNC.md"])
     run(["git", "status", "--short"])
     run(["git", "commit", "-m", "자동: 파이프라인 실행 후 동기화"])
     if run(["git", "push", "origin", "main"]):

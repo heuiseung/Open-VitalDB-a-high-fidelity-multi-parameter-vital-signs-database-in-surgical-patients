@@ -1,6 +1,6 @@
 # GitHub에 자동 저장 (스테이징 + 커밋 + 푸시)
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Set-Location $PSScriptRoot
+Set-Location (Split-Path $PSScriptRoot -Parent)
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Git이 설치되어 있지 않거나 PATH에 없습니다."

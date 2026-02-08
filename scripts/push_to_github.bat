@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 where git >nul 2>&1 || (echo Git이 설치되어 있지 않거나 PATH에 없습니다. & pause & exit /b 1)
 

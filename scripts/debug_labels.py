@@ -4,11 +4,16 @@
 - 저혈압 이벤트 실제 발생 여부 확인
 """
 import os
+import sys
 os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+from pathlib import Path
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
 
 import pandas as pd
 import numpy as np
-from pathlib import Path
 from tqdm import tqdm
 
 from config import (

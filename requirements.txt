@@ -1,4 +1,5 @@
-# VitalDB Hypotension Prediction (CUDA)
+# VitalDB-Hypotension-Prediction [필수]
+# torch, vitaldb 등
 vitaldb>=1.6.0
 pandas>=1.5.0
 numpy>=1.23.0

@@ -1,6 +1,7 @@
 @echo off
 REM 빌드 진행 상황 자동 모니터링 (매 5분마다)
 setlocal enabledelayedexpansion
+cd /d "%~dp0.."
 
 :monitor_loop
 cls

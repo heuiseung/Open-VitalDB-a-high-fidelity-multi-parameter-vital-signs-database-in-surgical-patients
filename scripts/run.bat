@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 set "PY="
 for %%d in (Python314 Python312) do (
@@ -20,7 +20,7 @@ if errorlevel 1 (
 
 echo.
 echo [2/2] 파이프라인 실행 중...
-"%PY%" run_all.py
+"%PY%" scripts\run_all.py
 
 echo.
 pause

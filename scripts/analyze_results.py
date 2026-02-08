@@ -1,12 +1,17 @@
 """Analysis and Visualization Script"""
 import os
+import sys
 os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+from pathlib import Path
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
 
 import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
@@ -20,10 +25,7 @@ from config import (
     DATASET_PATH, CHECKPOINT_DIR, MODEL_PATH,
     TEST_SIZE, RANDOM_STATE, DEVICE,
 )
-
-# Use original model class instead
-import sys
-from train_model import HypoNet
+from model import HypoNet
 
 print("=" * 70)
 print("[ANALYSIS] Hypotension Prediction Model - Performance Analysis")

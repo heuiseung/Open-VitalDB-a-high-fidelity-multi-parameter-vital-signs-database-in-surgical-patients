@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 set "PY="
 for %%d in (Python314 Python312) do (
@@ -13,11 +13,11 @@ where python >nul 2>&1 && set "PY=python" || goto :nopy
 echo [1/2] 패키지 설치...
 "%PY%" -m pip install -q -r requirements.txt
 
-echo [2/2] 노트북 자동 실행 (hypotension_pipeline.ipynb)...
-"%PY%" -m jupyter nbconvert --to notebook --execute --inplace hypotension_pipeline.ipynb
+echo [2/2] 노트북 자동 실행 (notebooks/hypotension_pipeline.ipynb)...
+"%PY%" -m jupyter nbconvert --to notebook --execute --inplace notebooks\hypotension_pipeline.ipynb
 
 echo.
-echo 완료. 출력: hypotension_pipeline.ipynb
+echo 완료. 출력: notebooks\hypotension_pipeline.ipynb
 pause
 exit /b 0
 
